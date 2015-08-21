@@ -1,0 +1,126 @@
+:-auto_table.
+
+
+/* Course(number, quarter)*/
+
+course(102, q1).
+course(202, q1).
+course(202, q2).
+course(302, q3).
+
+/* Prereqs(course, prerequisite) */
+prereqs(202, 102).
+prereqs(302, 202).
+
+
+/*Enrolls(studentID, course, quarter)*/
+
+enrolls(john, 102, q1).
+enrolls(john, 202, q2).
+enrolls(john, 302, q3).
+enrolls(mike, 102, q1).
+enrolls(mike, 202, q1).
+enrolls(mike, 302, q3).
+
+/* Solution-Q1-part1*/
+answer1(Course, Prerequisite) :- prereqs(Course,Prerequisite).
+answer1(Course, Prerequisite) :- answer1(Course, Prerequisite1), prereqs(Prerequisite1,Prerequisite).
+
+/*Solution-Q1-part2*/
+/* Get all the prerequisite courses for a given course in which student enrolled in previous quarters*/
+prevEnrolled(StudentID, Course, Prerequisite, Quarter) :- 	enrolls(StudentID, Course, Quarter), 
+															answer1(Course, Prerequisite),  
+															enrolls(StudentID, Prerequisite, Quarter1),
+															Quarter @> Quarter1.
+
+/* Now get the student ID for the prerequisite courses where student didn't enroll in previous quarter*/
+
+answer2(StudentID, Course) :- 	enrolls(StudentID, Course,Quarter), 
+						answer1(Course, Prerequisite),
+						tnot(prevEnrolled(StudentID, Course, Prerequisite, Quarter)).
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+metro(c,1).
+metro(1,2).
+metro(2,c).
+metro(2,4).
+
+bus(a,b).
+bus(b,c).
+bus(c,d).
+bus(d,e).
+bus(e,f).
+bus(a,c).
+bus(c,e).
+bus(e,b).
+bus(b,d).
+bus(d,f).
+bus(1,2).
+bus(2,3).
+bus(3,4).
+bus(4,5).
+
+
+
+
+
+/*solution to question 2, part 1*/
+metropaths(X,Y) :- metro(X,Y).
+metropaths(X,Y) :- metro(X,Z),metropaths(Z,Y).		/*transitive closure for metro paths*/
+ 
+buspaths(X,Y) :- bus(X,Y).
+buspaths(X,Y) :- bus(X,Z),buspaths(Z,Y).			/*transitive closure for bus paths*/
+
+metrobuspaths(X,Y) :- metropaths(X,Y).
+metrobuspaths(X,Y) :- buspaths(X,Y). 
+
+metrobusmixpaths(X,Y) :- metrobuspaths(X,Y).
+metrobusmixpaths(X,Y) :- metrobuspaths(X,Z), metrobusmixpaths(Z,Y).			/*transitive closure for all paths*/
+
+
+
+answer3(X,Y) :- metrobusmixpaths(X,Y), tnot(buspaths(X,Y)), tnot(metropaths(X,Y)).	/*paths where metro and bus both are  must */
+
+
+
+
+
+
+
+
+
+
+
+
+
+/*solution to question 2, part 2*/
+
+/*find all m,n such that some non-last intermediate exists*/
+buspathfirsts(M,F,N) :- buspaths(M,N), buspaths(M,F), buspaths(F,K), bus(K,N).
+
+/*find all m,n such that some subsequent intermediate exists*/
+buspathseconds(M,S,N) :- buspaths(M,N), bus(M,K), buspaths(K,S), buspaths(S,N).
+
+/*find m,n where non-last intermediate has some metro to subsequent station*/
+goodsources(M,F,N) :- buspathfirsts(M,F,N), buspathseconds(M,S,N), buspaths(F,S), metropaths(F,S).
+
+/*find m,n where no metro from intermediate to subsequent intermediate exists*/
+badsources(M,F,N) :- buspathfirsts(M,F,N), tnot(goodsources(M,F,N)).
+badpairs(M,N) :- badsources(M,F,N).
+
+/*answer = m,n which are not in badpairs and buspath exists between them*/
+answer4(M,N) :- buspaths(M,N), tnot(badpairs(M,N)).
